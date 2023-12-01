@@ -1,12 +1,18 @@
 #include <Arduino.h>
-
+#include "wifi_config.h"
+#include "lora_config.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "FS.h"
+#include "display_config.h"
 
 void setup() {
-// write your initialization code here
-    setupLora();
+    Serial.begin(115200);
+    setupDisplay();
     setupWifi();
+    setupLora();
 }
 
 void loop() {
-// write your code here
+    loopLora();
 }

@@ -5,6 +5,6 @@
 #ifndef LORANET_WIFI_CONFIG_H
 #define LORANET_WIFI_CONFIG_H
 
-extern void setWifi();
+extern void setupWifi();
 
 #endif //LORANET_WIFI_CONFIG_H
