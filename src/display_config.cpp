@@ -5,7 +5,7 @@
 
 SSD1306Wire  display(0x3c, 500000, SDA_OLED, SCL_OLED, GEOMETRY_128_64, RST_OLED);
 
-String nodo = "Nodo 2";
+String nodo = "Nodo 1";
 
 void setupDisplay(){
     display.init();
@@ -15,6 +15,7 @@ void setupDisplay(){
     display.clear();
     display.drawString(0, 0, nodo);
     display.display();
+    Serial.println("Display configured successfully");
 }
 
 void loopDisplay(int16_t myrss){

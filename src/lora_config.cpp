@@ -1,6 +1,7 @@
 #include "LoRaWan_APP.h"
 #include "Arduino.h"
 #include "display_config.h"
+#include "server_config.h"
 
 #define RF_FREQUENCY                                923000000 // Hz
 #define TX_OUTPUT_POWER                             21        // dBm
@@ -33,14 +34,15 @@ typedef enum {
     STATE_TX
 } States_t;
 
-int16_t txNumber;
 States_t state;
-int16_t Rssi, rxSize;
+int16_t Rssi;
 String incomingString;
+String sendMessage;
+char ack[] = "*ok*";
+bool ok = false;
 
 void setupLora() {
     Mcu.begin();
-    txNumber = 0;
     Rssi = 0;
 
     RadioEvents.TxDone = OnTxDone;
@@ -59,10 +61,13 @@ void setupLora() {
                       LORA_SYMBOL_TIMEOUT, LORA_FIX_LENGTH_PAYLOAD_ON,
                       0, true, 0, 0, LORA_IQ_INVERSION_ON, true);
     state = STATE_RX;
+    Serial.println("LoRa configured seccessfully");
 }
 
 
 void loopLora() {
+
+    sendMessage = takeData();
 
     if (millis() - tiempoAnterior >= intervalo) {
         clearDisplay();
@@ -76,16 +81,24 @@ void loopLora() {
         state = STATE_TX;
     }
 
+    if (sendMessage != ""){
+        strcpy(txpacket, sendMessage.c_str());
+        state = STATE_TX;
+    }
+
     switch (state) {
         case STATE_TX:
             delay(200);
-            txNumber++;
             Radio.Send((uint8_t *) txpacket, strlen(txpacket));
             state = LOWPOWER;
             break;
         case STATE_RX:
             Radio.Rx(0);
             state = LOWPOWER;
+            if (ok){
+                Radio.Send((uint8_t *) ack, strlen(ack));
+                ok = false;
+            }
             break;
         case LOWPOWER:
             Radio.IrqProcess();
@@ -106,13 +119,18 @@ void OnTxTimeout() {
 
 void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
     Rssi = rssi;
-    rxSize = size;
     memcpy(rxpacket, payload, size);
     rxpacket[size] = '\0';
     Radio.Sleep();
-
     loopDisplay(Rssi);
 
-    Serial.printf("%s", rxpacket);
+    Serial.printf("%s\n", rxpacket);
+
+    if(strcmp(rxpacket, "*ok*") != 0){
+        ok = true;
+        loopServer(rxpacket);
+        rxpacket[0] = '\0';
+    }
+
     state = STATE_RX;
 }
